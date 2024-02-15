@@ -1,38 +1,34 @@
-// Each #kernel tells which function to compile; you can have many kernels
 #pragma kernel CSMain
 
 static const int numThreads = 8;
 
-// Create a RenderTexture with enableRandomWrite flag and set it
-// with cs.SetTexture
 int Resolution;
 RWTexture2D<float4> Result;
-RWStructuredBuffer<int> sandBuffer;
 RWStructuredBuffer<int> spawnSandBuffer;
 
 [numthreads(numThreads, numThreads, 1)]
 void CSMain(uint3 id : SV_DispatchThreadID)
-{
+{    
     // Calculate the 1D index based on the 2D coordinates
     int index = id.y * Resolution + id.x;
-
-    //Result[id.xy] = float4(id.x & id.y, (id.x & 15)/15.0, (id.y & 15)/15.0, 0.0);
-    Result[id.xy] = float4(sandBuffer[index], 0.0f, 0.0f, 0.0);
+    
+    Result[id.xy] = float4(Result[id.xy].r + spawnSandBuffer[index], 0.0f, 0.0f, 0.0);
     
     int width = Resolution;
     int height = Resolution;
-
+    
     for (int y = 0; y < height - 1; ++y)
     {
         // Read the pixel value from the current position
         float4 pixelValue = Result[id.xy];
-        Result[id.xy] = Result[int2(id.x, id.y + 1)];
+        //if (Result[int2(id.x, id.y - 1)])
+        Result[id.xy] = Result[int2(id.x, id.y - 1)];
     }
 
     // For the last row, write the value from the buffer
-    if (id.y == height - 1)
-    {
-        int index = id.x + (height - 1) * width;
-        Result[id.xy] = float4(sandBuffer[index], 0.0f, 0.0f, 1.0f);
-    }
+    //if (id.y == height - 1)
+    //{
+    //    int index = id.x + (height - 1) * width;
+    //    Result[id.xy] = float4(sandBuffer[index], 0.0f, 0.0f, 1.0f);
+    //}
 }

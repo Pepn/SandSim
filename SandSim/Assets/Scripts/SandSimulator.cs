@@ -11,7 +11,6 @@ public class SandSimulator : MonoBehaviour
     [SerializeField] int textureSize = 64;
     [SerializeField] int numGroups = 64;
     ComputeBuffer spawnSandBuffer;
-    ComputeBuffer sandBuffer;
 
     private float timer;
     [SerializeField] float fps = 30.0f; // Desired frame rate interval (e.g., 30 FPS)
@@ -42,14 +41,31 @@ public class SandSimulator : MonoBehaviour
 
         CreateBuffers();
 
+        shader.Dispatch(0, numGroups, numGroups, 1);
+
+        ClearSpawnBuffer();
+    }
+
+    void ClearSpawnBuffer()
+    {
+        // create array of default values
+        int[] initData = new int[spawnSandBuffer.count];
+
+        // Fill the array with zeros
+        for (int i = 0; i < initData.Length; i++)
+        {
+            initData[i] = 0;
+        }
+
+        spawnSandBuffer.SetData(initData);
     }
 
     void CreateBuffers()
     {
-        sandBuffer = new ComputeBuffer(textureSize * textureSize, sizeof(int));
+        spawnSandBuffer = new ComputeBuffer(textureSize * textureSize, sizeof(int));
 
         // create array of default values
-        int[] initData = new int[sandBuffer.count];
+        int[] initData = new int[spawnSandBuffer.count];
 
         // Fill the array with zeros
         for (int i = 0; i < initData.Length; i++)
@@ -63,8 +79,8 @@ public class SandSimulator : MonoBehaviour
             initData[i] = 1;
         }
 
-        sandBuffer.SetData(initData);
-        shader.SetBuffer(0, "sandBuffer", sandBuffer);
+        spawnSandBuffer.SetData(initData);
+        shader.SetBuffer(0, "spawnSandBuffer", spawnSandBuffer);
     }
 
     void Update()
@@ -151,7 +167,6 @@ public class SandSimulator : MonoBehaviour
         if (spawnSandBuffer != null)
         {
             spawnSandBuffer.Release();
-            sandBuffer.Release();
         }
     }
 }
