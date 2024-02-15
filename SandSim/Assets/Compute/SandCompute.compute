@@ -1,6 +1,7 @@
 #pragma kernel CSMain
 
 static const int numThreads = 8;
+static const float4 empty = float4(0.0f, 0.0f, 0.0f, 0.0f);
 
 int Resolution;
 RWTexture2D<float4> Result;
@@ -21,8 +22,11 @@ void CSMain(uint3 id : SV_DispatchThreadID)
     {
         // Read the pixel value from the current position
         float4 pixelValue = Result[id.xy];
-        //if (Result[int2(id.x, id.y - 1)])
-        Result[id.xy] = Result[int2(id.x, id.y - 1)];
+        if (Result[int2(id.x, id.y - 1)].r == empty.r)
+        {
+            Result[int2(id.x, id.y - 1)] = Result[id.xy];
+            Result[id.xy] = empty;
+        }
     }
 
     // For the last row, write the value from the buffer
