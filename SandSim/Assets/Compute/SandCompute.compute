@@ -18,6 +18,25 @@ bool IsVexelEven(uint y)
     return (y % 2) == 0;
 }
 
+// Function to generate a random float between 0 and 1
+float RandomFloat(float2 seed)
+{
+    return frac(sin(dot(seed, float2(12.9898, 78.233))) * 43758.5453);
+}
+
+bool DropSandPixelLeft(int idx, int idy)
+{
+    // Generate a random seed based on thread ID
+    float2 seed = float2(idx, idy);
+
+    // Generate a random float between 0 and 1
+    float randomValue = RandomFloat(seed);
+
+    // Use the random value to determine the outcome (50/50 chance)
+    return randomValue < 0.5f;
+}
+
+
 [numthreads(numThreads, numThreads, 1)]
 void CSMain(uint3 id : SV_DispatchThreadID)
 {    
@@ -39,8 +58,8 @@ void CSMain(uint3 id : SV_DispatchThreadID)
     
     int2 centerCoord = int2(id.x, y);
     int2 belowCoord = centerCoord + int2(0, 1); // Below
-    int2 belowLeftCoord = centerCoord + int2(1, 1); // Below
-    int2 leftCoord = centerCoord + int2(1, 0); // Left
+    int2 belowLeftCoord = centerCoord + int2(-1, 1); // Below
+    int2 leftCoord = centerCoord + int2(-1, 0); // Left
     int2 rightCoord = centerCoord + int2(1, 0); // Right
     int2 belowRightCoord = centerCoord + int2(1, 1); // Right
     int2 upCoord = centerCoord + int2(0, -1); // Up
@@ -58,14 +77,14 @@ void CSMain(uint3 id : SV_DispatchThreadID)
                     Result[belowCoord] = Result[centerCoord];
                     Result[centerCoord] = empty;
                 }
+                else if (Result[belowLeftCoord].r == empty.r && DropSandPixelLeft(id.x, id.y))
+                {
+                    Result[belowLeftCoord] = Result[centerCoord];
+                    Result[centerCoord] = empty;
+                }
                 else if (Result[belowRightCoord].r == empty.r)
                 {
                     Result[belowRightCoord] = Result[centerCoord];
-                    Result[centerCoord] = empty;
-                }
-                else if (Result[belowLeftCoord].r == empty.r)
-                {
-                    Result[belowLeftCoord] = Result[centerCoord];
                     Result[centerCoord] = empty;
                 }
             }
