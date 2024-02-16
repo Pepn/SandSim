@@ -19,18 +19,26 @@ public class SandSimulator : MonoBehaviour
 
     // Get the Renderer component of the child plane
     Renderer renderer;
-    private int frameId = 0;
+    private int step = 0;
 
     // Start is called before the first frame update
     void Start()
     {
         renderTexture = new RenderTexture(textureSize, textureSize, 24);
+
+        // Disable anti-aliasing
+        renderTexture.antiAliasing = 1; // Set to 1x (no anti-aliasing)
+
+        // Disable mipmapping
+        renderTexture.useMipMap = false;
         renderTexture.enableRandomWrite = true;
+        renderTexture.filterMode = FilterMode.Point;
         renderTexture.Create();
         shader.SetTexture(0, "Result", renderTexture);
 
         shader.SetInt("Resolution", textureSize);
-        shader.SetInt("frameId", frameId);
+        shader.SetInt("frameId", step);
+
 
 
         renderer = GetComponent<Renderer>();
@@ -157,8 +165,8 @@ public class SandSimulator : MonoBehaviour
 
         shader.Dispatch(0, numGroups, numGroups, 1);
 
-        frameId++;
-        shader.SetInt("frameId", frameId);
+        step++;
+        shader.SetInt("step", step % 3);
 
         if (spawnSandBuffer != null)
         {

@@ -4,18 +4,33 @@ static const int numThreads = 4;
 static const float4 empty = float4(0.0f, 0.0f, 0.0f, 0.0f);
 
 int Resolution;
-int frameId;
+int step;
 RWTexture2D<float4> Result;
 RWStructuredBuffer<int> spawnSandBuffer;
 
-bool IsFrameIdEven(uint frameId)
+bool IsFirstStep(uint step)
 {
-    return (frameId % 2) == 0;
+    return step == 0;
+}
+
+bool IsSecondStep(uint step)
+{
+    return step == 1;
+}
+
+bool IsThirdStep(uint step)
+{
+    return step == 2;
 }
 
 bool IsVexelEven(uint y)
 {
     return (y % 2) == 0;
+}
+
+bool IsVexelUneven(uint y)
+{
+    return (y % 2) != 0;
 }
 
 // Function to generate a random float between 0 and 1
@@ -65,24 +80,41 @@ void CSMain(uint3 id : SV_DispatchThreadID)
     int2 upCoord = centerCoord + int2(0, -1); // Up
     
     // start sand rules
-    if (IsFrameIdEven(frameId))
+    
+    // sand falling down split per alternating row so we dont overwrite
+    if (IsVexelUneven(id.y) && IsFirstStep(step))
     {
-        if (IsVexelEven(id.y * Resolution))
+        if (Result[centerCoord].r != empty.r && Result[belowCoord].r == empty.r)
         {
-            if (Result[centerCoord].r != empty.r)
+            Result[belowCoord] = Result[centerCoord];
+            Result[centerCoord] = empty;
+        }
+    }
+    else if (IsVexelEven(id.y) & IsSecondStep(step))
+    {
+        //float4 debug = float4(0, IsVexelUneven(id.y) & IsFrameIdEven(frameId) ? 1.0f : 0.0f, 0, 0);
+        //Result[centerCoord] = debug;
+        if (Result[centerCoord].r != empty.r && Result[belowCoord].r == empty.r)
+        {
+            Result[belowCoord] = Result[centerCoord];
+            Result[centerCoord] = empty;
+        }
+    }
+    
+    // sand falling left and right split per alternating row so we dont overwrite
+    if (IsThirdStep(step))
+    {
+        if (Result[centerCoord].r != empty.r)
+        {
+            // if below is empty put this vexel there
+            if (Result[belowCoord].r != empty.r)
             {
-                // if below is empty put this vexel there
-                if (Result[belowCoord].r == empty.r)
-                {
-                    Result[belowCoord] = Result[centerCoord];
-                    Result[centerCoord] = empty;
-                }
-                else if (Result[belowLeftCoord].r == empty.r && DropSandPixelLeft(id.x, id.y))
+                if (belowLeftCoord.x > 1 && Result[belowLeftCoord].r == empty.r && DropSandPixelLeft(id.x, id.y))
                 {
                     Result[belowLeftCoord] = Result[centerCoord];
                     Result[centerCoord] = empty;
                 }
-                else if (Result[belowRightCoord].r == empty.r)
+                else if (belowRightCoord.x < Resolution -1 && Result[belowRightCoord].r == empty.r)
                 {
                     Result[belowRightCoord] = Result[centerCoord];
                     Result[centerCoord] = empty;
@@ -90,18 +122,4 @@ void CSMain(uint3 id : SV_DispatchThreadID)
             }
         }
     }
-    //else
-    //{
-    //    if (!IsVexelEven(y * numThreads))
-    //    {
-    //        if (Result[centerCoord].r != empty.r)
-    //        {
-    //            if (Result[belowCoord].r == empty.r)
-    //            {
-    //                Result[belowCoord] = Result[centerCoord];
-    //                Result[centerCoord] = empty;
-    //            }
-    //        }
-    //    }
-    //}
 }
