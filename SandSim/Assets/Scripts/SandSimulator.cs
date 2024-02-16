@@ -86,7 +86,7 @@ public class SandSimulator : MonoBehaviour
     void Update()
     {
         timer += Time.deltaTime;
-        if (timer <= fps/60.0f)
+        if (timer <= 1.0f/fps)
         {
             return;
         }

@@ -13,19 +13,33 @@ void CSMain(uint3 id : SV_DispatchThreadID)
     // Calculate the 1D index based on the 2D coordinates
     int index = id.y * Resolution + id.x;
     
-    Result[id.xy] = float4(Result[id.xy].r + spawnSandBuffer[index], 0.0f, 0.0f, 0.0);
+    Result[id.xy] = Result[id.xy] + float4(spawnSandBuffer[index], 0.0f, 0.0f, 0.0);
     
     int width = Resolution;
     int height = Resolution;
     
-    for (int y = 0; y < height - 1; ++y)
+    // Loop over the texture from bottom to top
+    int y = id.y;
+    
+    if (y >= height-1)
     {
-        // Read the pixel value from the current position
-        float4 pixelValue = Result[id.xy];
-        if (Result[int2(id.x, id.y - 1)].r == empty.r)
+        return;
+    }
+    
+    int2 centerCoord = int2(id.x, y);
+    int2 belowCoord = centerCoord + int2(0, 1); // Below
+    int2 leftCoord = centerCoord + int2(1, 0); // Left
+    int2 rightCoord = centerCoord + int2(1, 0); // Right
+    int2 upCoord = centerCoord + int2(0, -1); // Up
+    
+    
+    // start sand rules
+    if (Result[centerCoord].r != empty.r)
+    {
+        if (Result[belowCoord].r == empty.r)
         {
-            Result[int2(id.x, id.y - 1)] = Result[id.xy];
-            Result[id.xy] = empty;
+            Result[belowCoord] = Result[centerCoord];
+            Result[centerCoord] = empty;
         }
     }
 

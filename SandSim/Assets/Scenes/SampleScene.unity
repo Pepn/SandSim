@@ -378,7 +378,7 @@ MonoBehaviour:
   renderTexture: {fileID: 0}
   textureSize: 256
   numGroups: 64
-  fps: 10
+  fps: 100
 --- !u!64 &971797397
 MeshCollider:
   m_ObjectHideFlags: 0
