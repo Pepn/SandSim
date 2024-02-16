@@ -5,6 +5,7 @@ static const float4 empty = float4(0.0f, 0.0f, 0.0f, 0.0f);
 
 int Resolution;
 RWTexture2D<float4> Result;
+RWTexture2D<float4> Input;
 RWStructuredBuffer<int> spawnSandBuffer;
 
 [numthreads(numThreads, numThreads, 1)]
@@ -13,7 +14,7 @@ void CSMain(uint3 id : SV_DispatchThreadID)
     // Calculate the 1D index based on the 2D coordinates
     int index = id.y * Resolution + id.x;
     
-    Result[id.xy] = Result[id.xy] + float4(spawnSandBuffer[index], 0.0f, 0.0f, 0.0);
+    Input[id.xy] = Input[id.xy] + float4(spawnSandBuffer[index], 0.0f, 0.0f, 0.0);
     
     int width = Resolution;
     int height = Resolution;
@@ -32,21 +33,12 @@ void CSMain(uint3 id : SV_DispatchThreadID)
     int2 rightCoord = centerCoord + int2(1, 0); // Right
     int2 upCoord = centerCoord + int2(0, -1); // Up
     
-    
     // start sand rules
-    if (Result[centerCoord].r != empty.r)
+    if (Input[centerCoord].r != empty.r)
     {
-        if (Result[belowCoord].r == empty.r)
+        if (Input[belowCoord].r == empty.r)
         {
-            Result[belowCoord] = Result[centerCoord];
-            Result[centerCoord] = empty;
+            Result[belowCoord] = Input[centerCoord];
         }
     }
-
-    // For the last row, write the value from the buffer
-    //if (id.y == height - 1)
-    //{
-    //    int index = id.x + (height - 1) * width;
-    //    Result[id.xy] = float4(sandBuffer[index], 0.0f, 0.0f, 1.0f);
-    //}
 }

@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using UnityEditor.ShaderKeywordFilter;
 using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.UIElements;
@@ -8,6 +9,7 @@ public class SandSimulator : MonoBehaviour
 {
     [SerializeField] ComputeShader shader;
     [SerializeField] RenderTexture renderTexture;
+    [SerializeField] RenderTexture renderTexture2;
     [SerializeField] int textureSize = 64;
     [SerializeField] int numGroups = 64;
     ComputeBuffer spawnSandBuffer;
@@ -15,35 +17,51 @@ public class SandSimulator : MonoBehaviour
     private float timer;
     [SerializeField] float fps = 30.0f; // Desired frame rate interval (e.g., 30 FPS)
 
+    // Get the Renderer component of the child plane
+    Renderer renderer;
+    private bool flip = false;
+
     // Start is called before the first frame update
     void Start()
     {
         renderTexture = new RenderTexture(textureSize, textureSize, 24);
         renderTexture.enableRandomWrite = true;
         renderTexture.Create();
+        shader.SetTexture(0, "Input", renderTexture);
+
+        renderTexture2 = new RenderTexture(textureSize, textureSize, 24);
+        renderTexture2.enableRandomWrite = true;
+        renderTexture2.Create();
+        shader.SetTexture(0, "Result", renderTexture2);
 
         shader.SetInt("Resolution", textureSize);
-        shader.SetTexture(0, "Result", renderTexture);
 
-        // Get the Renderer component of the child plane
-        Renderer renderer = GetComponentInChildren<Renderer>();
+        renderer = GetComponent<Renderer>();
 
-        // Check if the Renderer component exists
-        if (renderer != null)
-        {
-            // Set the texture of the material on the Renderer
-            renderer.material.mainTexture = renderTexture;
-        }
-        else
-        {
-            Debug.LogError("Renderer component not found on the child plane object.");
-        }
+        // Set the texture of the material on the Renderer
+        renderer.material.mainTexture = renderTexture;
 
         CreateBuffers();
 
         shader.Dispatch(0, numGroups, numGroups, 1);
 
         ClearSpawnBuffer();
+    }
+
+    void FlipRenderTextures()
+    {
+        if (flip)
+        {
+            shader.SetTexture(0, "Input", renderTexture2);
+            shader.SetTexture(0, "Result", renderTexture);
+        }
+        else
+        {
+            shader.SetTexture(0, "Input", renderTexture);
+            shader.SetTexture(0, "Result", renderTexture2);
+        }
+
+        flip = !flip;
     }
 
     void ClearSpawnBuffer()
@@ -160,6 +178,8 @@ public class SandSimulator : MonoBehaviour
         {
             spawnSandBuffer.Release();
         }
+
+        FlipRenderTextures();
     }
 
     void OnDestroy()
