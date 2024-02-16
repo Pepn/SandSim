@@ -376,9 +376,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   shader: {fileID: 7200000, guid: 2f835c323f3b42a41ba9cec3f59ba1da, type: 3}
   renderTexture: {fileID: 0}
-  textureSize: 256
-  numGroups: 64
-  fps: 100
+  renderTexture2: {fileID: 0}
+  textureSize: 128
+  numGroups: 16
+  fps: 1298
 --- !u!64 &971797397
 MeshCollider:
   m_ObjectHideFlags: 0

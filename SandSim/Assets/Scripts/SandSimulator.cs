@@ -19,7 +19,7 @@ public class SandSimulator : MonoBehaviour
 
     // Get the Renderer component of the child plane
     Renderer renderer;
-    private bool flip = false;
+    private int frameId = 0;
 
     // Start is called before the first frame update
     void Start()
@@ -27,14 +27,11 @@ public class SandSimulator : MonoBehaviour
         renderTexture = new RenderTexture(textureSize, textureSize, 24);
         renderTexture.enableRandomWrite = true;
         renderTexture.Create();
-        shader.SetTexture(0, "Input", renderTexture);
-
-        renderTexture2 = new RenderTexture(textureSize, textureSize, 24);
-        renderTexture2.enableRandomWrite = true;
-        renderTexture2.Create();
-        shader.SetTexture(0, "Result", renderTexture2);
+        shader.SetTexture(0, "Result", renderTexture);
 
         shader.SetInt("Resolution", textureSize);
+        shader.SetInt("frameId", frameId);
+
 
         renderer = GetComponent<Renderer>();
 
@@ -46,22 +43,6 @@ public class SandSimulator : MonoBehaviour
         shader.Dispatch(0, numGroups, numGroups, 1);
 
         ClearSpawnBuffer();
-    }
-
-    void FlipRenderTextures()
-    {
-        if (flip)
-        {
-            shader.SetTexture(0, "Input", renderTexture2);
-            shader.SetTexture(0, "Result", renderTexture);
-        }
-        else
-        {
-            shader.SetTexture(0, "Input", renderTexture);
-            shader.SetTexture(0, "Result", renderTexture2);
-        }
-
-        flip = !flip;
     }
 
     void ClearSpawnBuffer()
@@ -136,50 +117,53 @@ public class SandSimulator : MonoBehaviour
                         UnityEngine.Vector3 localHitPoint = quadTransform.InverseTransformPoint(hitPoint);
 
                         // Now 'localHitPoint' contains the position on the quad where the player clicked
-                        //Debug.Log("Clicked on quad at: " + localHitPoint);
+                        Debug.Log("Clicked on quad at: " + localHitPoint);
 
                         // Map the coordinates to the range [0, m_paddedImageSize]
-                        mappedX = (int)((localHitPoint.x * 0.5f + 0.5f) * textureSize);
-                        mappedY = (int)((localHitPoint.y * 0.5f + 0.5f) * textureSize);
+                        mappedX = (int)((-localHitPoint.x * 0.5f ) * textureSize/5);
+                        mappedY = (int)((-localHitPoint.z * 0.5f) * textureSize/5);
 
 
                         // convert to fit the transposed images or smth
-                        mappedY = textureSize - mappedY;
+                        mappedX = mappedX + (int)(textureSize * 0.5f);
+                        mappedY = mappedY + (int)(textureSize * 0.5f);
 
                         // Now 'mappedX' and 'mappedY' contain the position on the quad in the range [0, m_paddedImageSize]
                         Debug.Log($" {textureSize} Clicked on quad at: (" + mappedX + ", " + mappedY + ")");
+
+                        int deleteRange = 3;
+
+                        int[] spawnSandArray = new int[textureSize * textureSize];
+
+                        for (int y = -deleteRange; y < deleteRange; y++)
+                        {
+                            for (int x = -deleteRange; x < deleteRange; x++)
+                            {
+                                int yval = textureSize * ((int)mappedY + y);
+                                int xval = (int)mappedX + x;
+                                spawnSandArray[yval + xval] = 1;
+                            }
+                        }
+
+                        spawnSandBuffer = new ComputeBuffer(spawnSandArray.Length, sizeof(int));
+                        spawnSandBuffer.SetData(spawnSandArray);
+
+                        shader.SetBuffer(0, "spawnSandBuffer", spawnSandBuffer);
                     }
                 }
             }
 
-            int deleteRange = 3;
-
-            int[] spawnSandArray = new int[textureSize * textureSize];
-
-            for (int y = -deleteRange; y < deleteRange; y++)
-            {
-                for (int x = -deleteRange; x < deleteRange; x++)
-                {
-                    int yval = textureSize * ((int)mappedY + y);
-                    int xval = (int)mappedX + x;
-                    spawnSandArray[yval + xval] = 1;
-                }
-            }
-
-            spawnSandBuffer = new ComputeBuffer(spawnSandArray.Length, sizeof(int));
-            spawnSandBuffer.SetData(spawnSandArray);
-
-            shader.SetBuffer(0, "spawnSand", spawnSandBuffer);
         }
 
         shader.Dispatch(0, numGroups, numGroups, 1);
 
-        if(spawnSandBuffer != null)
+        frameId++;
+        shader.SetInt("frameId", frameId);
+
+        if (spawnSandBuffer != null)
         {
             spawnSandBuffer.Release();
         }
-
-        FlipRenderTextures();
     }
 
     void OnDestroy()

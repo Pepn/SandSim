@@ -1,12 +1,22 @@
 #pragma kernel CSMain
 
-static const int numThreads = 8;
+static const int numThreads = 4;
 static const float4 empty = float4(0.0f, 0.0f, 0.0f, 0.0f);
 
 int Resolution;
+int frameId;
 RWTexture2D<float4> Result;
-RWTexture2D<float4> Input;
 RWStructuredBuffer<int> spawnSandBuffer;
+
+bool IsFrameIdEven(uint frameId)
+{
+    return (frameId % 2) == 0;
+}
+
+bool IsVexelEven(uint y)
+{
+    return (y % 2) == 0;
+}
 
 [numthreads(numThreads, numThreads, 1)]
 void CSMain(uint3 id : SV_DispatchThreadID)
@@ -14,7 +24,7 @@ void CSMain(uint3 id : SV_DispatchThreadID)
     // Calculate the 1D index based on the 2D coordinates
     int index = id.y * Resolution + id.x;
     
-    Input[id.xy] = Input[id.xy] + float4(spawnSandBuffer[index], 0.0f, 0.0f, 0.0);
+    Result[id.xy] = Result[id.xy] + float4(spawnSandBuffer[index], 0.0f, 0.0f, 0.0);
     
     int width = Resolution;
     int height = Resolution;
@@ -29,16 +39,50 @@ void CSMain(uint3 id : SV_DispatchThreadID)
     
     int2 centerCoord = int2(id.x, y);
     int2 belowCoord = centerCoord + int2(0, 1); // Below
+    int2 belowLeftCoord = centerCoord + int2(1, 1); // Below
     int2 leftCoord = centerCoord + int2(1, 0); // Left
     int2 rightCoord = centerCoord + int2(1, 0); // Right
+    int2 belowRightCoord = centerCoord + int2(1, 1); // Right
     int2 upCoord = centerCoord + int2(0, -1); // Up
     
     // start sand rules
-    if (Input[centerCoord].r != empty.r)
+    if (IsFrameIdEven(frameId))
     {
-        if (Input[belowCoord].r == empty.r)
+        if (IsVexelEven(id.y * Resolution))
         {
-            Result[belowCoord] = Input[centerCoord];
+            if (Result[centerCoord].r != empty.r)
+            {
+                // if below is empty put this vexel there
+                if (Result[belowCoord].r == empty.r)
+                {
+                    Result[belowCoord] = Result[centerCoord];
+                    Result[centerCoord] = empty;
+                }
+                else if (Result[belowRightCoord].r == empty.r)
+                {
+                    Result[belowRightCoord] = Result[centerCoord];
+                    Result[centerCoord] = empty;
+                }
+                else if (Result[belowLeftCoord].r == empty.r)
+                {
+                    Result[belowLeftCoord] = Result[centerCoord];
+                    Result[centerCoord] = empty;
+                }
+            }
         }
     }
+    //else
+    //{
+    //    if (!IsVexelEven(y * numThreads))
+    //    {
+    //        if (Result[centerCoord].r != empty.r)
+    //        {
+    //            if (Result[belowCoord].r == empty.r)
+    //            {
+    //                Result[belowCoord] = Result[centerCoord];
+    //                Result[centerCoord] = empty;
+    //            }
+    //        }
+    //    }
+    //}
 }
