@@ -19,7 +19,7 @@ public class SandSimulator : MonoBehaviour
 
     // Get the Renderer component of the child plane
     Renderer renderer;
-    private int step = 0;
+    private int frameId = 0;
 
     // Start is called before the first frame update
     void Start()
@@ -37,9 +37,6 @@ public class SandSimulator : MonoBehaviour
         shader.SetTexture(0, "Result", renderTexture);
 
         shader.SetInt("Resolution", textureSize);
-        shader.SetInt("frameId", step);
-
-
 
         renderer = GetComponent<Renderer>();
 
@@ -186,8 +183,8 @@ public class SandSimulator : MonoBehaviour
 
         shader.Dispatch(0, numGroups, numGroups, 1);
 
-        step++;
-        shader.SetInt("step", step % 2);
+        frameId++;
+        shader.SetInt("frameId", frameId % 999);
 
         if (spawnSandBuffer != null)
         {

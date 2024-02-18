@@ -12,14 +12,14 @@ static const float4 sand = float4(0.880, 0.801, 0.299, SAND);
 static const float4 stone = float4(0.880, 0.851, 0.890, STONE);
 
 int Resolution;
-int step;
+int frameId;
 RWTexture2D<float4> Result;
 RWStructuredBuffer<float> spawnSandBuffer;
 
 // to alternate the blocks
-bool IsFirstStep(uint step)
+bool IsFrameIdEven(uint frameId)
 {
-    return step == 0;
+    return frameId % 2;
 }
 
 void Swap(inout float4 a, inout float4 b)
@@ -30,15 +30,15 @@ void Swap(inout float4 a, inout float4 b)
 }
 
 // Hash function to create pseudo-random-like values
-float Hash(float2 p)
+float Hash(float2 p, int frameId)
 {
-    return frac(sin(dot(p, float2(12.9898, 78.233))) * 43758.5453);
+    return frac(sin(dot(p, float2(12.9898, 78.233 + frameId))) * 43758.5453);
 }
 
 // Function to add a random color offset to a pixel
-float4 AddRandomColorOffset(float4 color, float offsetRange, float2 pixelCoord)
+float4 AddRandomColorOffset(float4 color, float offsetRange, float2 pixelCoord, int frameId)
 {
-    float randomOffset = Hash(pixelCoord); // Generate a random value based on pixel coordinates
+    float randomOffset = Hash(pixelCoord, frameId); // Generate a random value based on pixel coordinates
     randomOffset = (randomOffset * 2.0 - 1.0) * offsetRange; // Scale and center the random value within the offset range
     return float4((color + randomOffset).rgb, color.a);; // Add the random offset to each color channel
 }
@@ -52,7 +52,7 @@ void CSMain(uint3 id : SV_DispatchThreadID)
     // read the input buffer and spawn pixel types
     if (spawnSandBuffer[index] == SAND && Result[id.xy].a == EMPTY)
     {
-        Result[id.xy] = AddRandomColorOffset(sand, 0.1f, id.xy);
+        Result[id.xy] = AddRandomColorOffset(sand, 0.1f, id.xy, frameId);
     }
     
     if (spawnSandBuffer[index] == DELETE && Result[id.xy].a != EMPTY)
@@ -62,7 +62,7 @@ void CSMain(uint3 id : SV_DispatchThreadID)
     
     if (spawnSandBuffer[index] == STONE)
     {
-        Result[id.xy] = AddRandomColorOffset(stone, 0.2f, id.xy);
+        Result[id.xy] = AddRandomColorOffset(stone, 0.2f, id.xy, frameId);
     }
     
     // Calculate the top-left corner of the current 2x2 block
@@ -70,7 +70,7 @@ void CSMain(uint3 id : SV_DispatchThreadID)
     
     // On alternating frames offset the block 
     //https://en.wikipedia.org/wiki/Block_cellular_automaton
-    if (IsFirstStep(step))
+    if (IsFrameIdEven(frameId))
     {
         blockStart += int2(-1, -1);
     }
