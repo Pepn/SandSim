@@ -94,11 +94,11 @@ void CSMain(uint3 id : SV_DispatchThreadID)
     }
     
     // sand rules
-    if (Result[pTopLeft].a == SAND && Result[pBottomLeft].a == EMPTY)
+    if (Result[pTopLeft].a == SAND && (Result[pBottomLeft].a == EMPTY || Result[pBottomLeft].a == WATER))
     {
         Swap(Result[pTopLeft], Result[pBottomLeft]);
     }
-    if (Result[pTopRight].a == SAND && Result[pBottomRight].a == EMPTY)
+    if (Result[pTopRight].a == SAND && (Result[pBottomRight].a == EMPTY || Result[pBottomRight].a == WATER))
     {
         Swap(Result[pTopRight], Result[pBottomRight]);
     }
