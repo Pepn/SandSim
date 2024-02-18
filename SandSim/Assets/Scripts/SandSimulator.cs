@@ -10,7 +10,6 @@ public class SandSimulator : MonoBehaviour
 {
     [SerializeField] ComputeShader shader;
     [SerializeField] RenderTexture renderTexture;
-    [SerializeField] RenderTexture renderTexture2;
     [SerializeField] int textureSize = 64;
     [SerializeField] int numGroups = 64;
     ComputeBuffer spawnSandBuffer;
@@ -81,7 +80,10 @@ public class SandSimulator : MonoBehaviour
         // Fill the array with zeros
         for (int i = 0; i < initData.Length*0.5; i++)
         {
-            initData[i] = 1.0f;
+            if(Random.Range(0f, 1f) < 0.5f)
+            {
+                initData[i] = 1.0f;
+            }
         }
 
         spawnSandBuffer.SetData(initData);
@@ -114,7 +116,7 @@ public class SandSimulator : MonoBehaviour
                     UnityEngine.Vector3 localHitPoint = quadTransform.InverseTransformPoint(hitPoint);
 
                     // Now 'localHitPoint' contains the position on the quad where the player clicked
-                    Debug.Log("Clicked on quad at: " + localHitPoint);
+                    //Debug.Log("Clicked on quad at: " + localHitPoint);
 
                     // Map the coordinates to the range [0, m_paddedImageSize]
                     mappedX = (int)((-localHitPoint.x * 0.5f) * textureSize / 5);

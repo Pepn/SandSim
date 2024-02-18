@@ -45,6 +45,10 @@ float4 AddRandomColorOffset(float4 color, float offsetRange, float2 pixelCoord, 
     return float4((color + randomOffset).rgb, color.a);; // Add the random offset to each color channel
 }
 
+// TODO improve water dropping faster
+// add dynamic lightning
+// add other cellular automata (plants, fishes?) this probably needs to look outside the 2x2 cell blocks
+
 [numthreads(numThreads, numThreads, 1)]
 void CSMain(uint3 id : SV_DispatchThreadID)
 {    
@@ -102,11 +106,11 @@ void CSMain(uint3 id : SV_DispatchThreadID)
     {
         Swap(Result[pTopRight], Result[pBottomRight]);
     }
-    if (Result[pTopLeft].a == SAND && Result[pBottomLeft].a != EMPTY && Result[pBottomRight].r == EMPTY && pBottomRight.x < Resolution)
+    if (Result[pTopLeft].a == SAND && Result[pBottomLeft].a != EMPTY && (Result[pBottomRight].a == EMPTY || Result[pBottomRight].a == WATER) && pBottomRight.x < Resolution)
     {
         Swap(Result[pTopLeft], Result[pBottomRight]);
     }
-    if (Result[pTopRight].a == SAND && Result[pBottomRight].a != EMPTY && Result[pBottomLeft].a == EMPTY && pBottomLeft.x >= 0)
+    if (Result[pTopRight].a == SAND && Result[pBottomRight].a != EMPTY && (Result[pBottomLeft].a == EMPTY || Result[pBottomLeft].a == WATER) && pBottomLeft.x >= 0)
     {
         Swap(Result[pTopRight], Result[pBottomLeft]);
     }
