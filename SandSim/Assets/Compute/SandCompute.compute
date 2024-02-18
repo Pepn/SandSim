@@ -2,7 +2,7 @@
 
 static const int numThreads = 4;
 static const float4 empty = float4(0.0f, 0.0f, 0.0f, 0.0f);
-static const float4 sand = float4(0.880f, 0.851f, 0.299f, 0.0f);
+static const float4 sand = float4(0.880, 0.851, 0.299, 0.0f);
 
 int Resolution;
 int step;
@@ -25,13 +25,10 @@ void CSMain(uint3 id : SV_DispatchThreadID)
     // Calculate the 1D index based on the 2D coordinates
     int index = id.y * Resolution + id.x;
     
-    if (spawnSandBuffer[index] == 1)
+    if (spawnSandBuffer[index] == 1 && Result[id.xy].r == 0)
     {
         Result[id.xy] = Result[id.xy] + sand;
     }
-    
-    int width = Resolution;
-    int height = Resolution;
     
     // Calculate the top-left corner of the current 2x2 block
     int2 blockStart = int2(id.xy * 2);
@@ -51,7 +48,7 @@ void CSMain(uint3 id : SV_DispatchThreadID)
             int2 pixelCoord = blockStart + int2(dx, dy);
             
             // hard stop at bottom
-            if (pixelCoord.y >= height - 1)
+            if (pixelCoord.y >= Resolution - 1)
             {
                 continue;
             }
@@ -64,22 +61,22 @@ void CSMain(uint3 id : SV_DispatchThreadID)
                 int2 belowRightCoord = pixelCoord + int2(1, 1);
                 
                 // if there is sand
-                if (Result[pixelCoord].r == sand.r)
+                if (Result[pixelCoord].r != empty.r)
                 {
                     // and below not swap them around
                     if (Result[belowCoord].r == empty.r)
                     {
-                        Result[belowCoord] = sand;
+                        Result[belowCoord] = Result[pixelCoord];
                         Result[pixelCoord] = empty;
                     }
                     else if (belowLeftCoord.x > 0 && Result[belowLeftCoord].r == empty.r && dx == 0)
                     {
-                        Result[belowLeftCoord] = sand;
+                        Result[belowLeftCoord] = Result[pixelCoord];
                         Result[pixelCoord] = empty;
                     }
                     else if (belowRightCoord.x < Resolution - 1 && Result[belowRightCoord].r == empty.r && dx == 1)
                     {
-                        Result[belowRightCoord] = sand;
+                        Result[belowRightCoord] = Result[pixelCoord];
                         Result[pixelCoord] = empty;
                     }
                 }
