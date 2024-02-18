@@ -19,6 +19,13 @@ bool IsSecondStep(uint step)
     return step == 1;
 }
 
+void Swap(inout float4 a, inout float4 b)
+{
+    float4 tmp = a;
+    a = b;
+    b = tmp;
+}
+
 [numthreads(numThreads, numThreads, 1)]
 void CSMain(uint3 id : SV_DispatchThreadID)
 {    
@@ -40,47 +47,34 @@ void CSMain(uint3 id : SV_DispatchThreadID)
         blockStart += int2(-1, -1);
     }
 
-    // Iterate over each pixel within the 2x2 block
-    for (int dx = 0; dx < 2; ++dx)
+    int2 pTopLeft = blockStart;
+    int2 pTopRight = blockStart + int2(1, 0);
+    int2 pBottomLeft = blockStart + int2(0, 1);
+    int2 pBottomRight = blockStart + int2(1, 1);
+    
+    // hard stop at bottom
+    if (pBottomLeft.y >= Resolution)
     {
-        for (int dy = 0; dy < 2; ++dy)
-        {
-            int2 pixelCoord = blockStart + int2(dx, dy);
-            
-            // hard stop at bottom
-            if (pixelCoord.y >= Resolution - 1)
-            {
-                continue;
-            }
-
-            // only do falling sand in top row of the grid
-            if (dy == 1)
-            {
-                int2 belowCoord = pixelCoord + int2(0, 1);
-                int2 belowLeftCoord = pixelCoord + int2(-1, 1);
-                int2 belowRightCoord = pixelCoord + int2(1, 1);
-                
-                // if there is sand
-                if (Result[pixelCoord].r != empty.r)
-                {
-                    // and below not swap them around
-                    if (Result[belowCoord].r == empty.r)
-                    {
-                        Result[belowCoord] = Result[pixelCoord];
-                        Result[pixelCoord] = empty;
-                    }
-                    else if (belowLeftCoord.x > 0 && Result[belowLeftCoord].r == empty.r && dx == 0)
-                    {
-                        Result[belowLeftCoord] = Result[pixelCoord];
-                        Result[pixelCoord] = empty;
-                    }
-                    else if (belowRightCoord.x < Resolution - 1 && Result[belowRightCoord].r == empty.r && dx == 1)
-                    {
-                        Result[belowRightCoord] = Result[pixelCoord];
-                        Result[pixelCoord] = empty;
-                    }
-                }
-            }     
-        }
+        return;
+    }
+    
+    if (Result[pTopLeft].r != empty.r && Result[pBottomLeft].r == empty.r)
+    {
+        Swap(Result[pTopLeft], Result[pBottomLeft]);
+    }
+    
+    if (Result[pTopRight].r != empty.r && Result[pBottomRight].r == empty.r)
+    {
+        Swap(Result[pTopRight], Result[pBottomRight]);
+    }
+    
+    if (Result[pTopLeft].r != empty.r && Result[pBottomLeft].r != empty.r && Result[pBottomRight].r == empty.r && pBottomRight.x < Resolution )
+    {
+        Swap(Result[pTopLeft], Result[pBottomRight]);
+    }
+    
+    if (Result[pTopRight].r != empty.r && Result[pBottomRight].r != empty.r && Result[pBottomLeft].r == empty.r && pBottomLeft.x >= 0)
+    {
+        Swap(Result[pTopRight], Result[pBottomLeft]);
     }
 }
