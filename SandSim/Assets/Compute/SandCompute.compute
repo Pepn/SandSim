@@ -2,6 +2,7 @@
 
 static const int numThreads = 4;
 static const float4 empty = float4(0.0f, 0.0f, 0.0f, 0.0f);
+static const float4 sand = float4(0.880f, 0.851f, 0.299f, 0.0f);
 
 int Resolution;
 int step;
@@ -24,7 +25,10 @@ void CSMain(uint3 id : SV_DispatchThreadID)
     // Calculate the 1D index based on the 2D coordinates
     int index = id.y * Resolution + id.x;
     
-    Result[id.xy] = Result[id.xy] + float4(spawnSandBuffer[index], 0.0f, 0.0f, 0.0);
+    if (spawnSandBuffer[index] == 1)
+    {
+        Result[id.xy] = Result[id.xy] + sand;
+    }
     
     int width = Resolution;
     int height = Resolution;
@@ -60,22 +64,22 @@ void CSMain(uint3 id : SV_DispatchThreadID)
                 int2 belowRightCoord = pixelCoord + int2(1, 1);
                 
                 // if there is sand
-                if (Result[pixelCoord].r != empty.r)
+                if (Result[pixelCoord].r == sand.r)
                 {
                     // and below not swap them around
                     if (Result[belowCoord].r == empty.r)
                     {
-                        Result[belowCoord] = Result[pixelCoord];
+                        Result[belowCoord] = sand;
                         Result[pixelCoord] = empty;
                     }
                     else if (belowLeftCoord.x > 0 && Result[belowLeftCoord].r == empty.r && dx == 0)
                     {
-                        Result[belowLeftCoord] = Result[pixelCoord];
+                        Result[belowLeftCoord] = sand;
                         Result[pixelCoord] = empty;
                     }
                     else if (belowRightCoord.x < Resolution - 1 && Result[belowRightCoord].r == empty.r && dx == 1)
                     {
-                        Result[belowRightCoord] = Result[pixelCoord];
+                        Result[belowRightCoord] = sand;
                         Result[pixelCoord] = empty;
                     }
                 }
