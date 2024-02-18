@@ -181,6 +181,12 @@ public class SandSimulator : MonoBehaviour
             SpawnPixelType(0.9f);
         }
 
+        // sidebutton click - water
+        if (Input.GetMouseButton(3))
+        {
+            SpawnPixelType(0.8f);
+        }
+
         shader.Dispatch(0, numGroups, numGroups, 1);
 
         frameId++;

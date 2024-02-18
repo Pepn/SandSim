@@ -6,10 +6,12 @@ static const int numThreads = 4;
 #define DELETE -1.0f     // Represents normal pixel
 #define SAND 1.0f      // Represents sand pixel
 #define STONE 0.9f      // Represents sand pixel
+#define WATER 0.8f      // Represents sand pixel
 
 static const float4 empty = float4(0.0f, 0.0f, 0.0f, 0.0f);
 static const float4 sand = float4(0.880, 0.801, 0.299, SAND);
 static const float4 stone = float4(0.880, 0.851, 0.890, STONE);
+static const float4 water = float4(0.424, 0.784, 1, WATER);
 
 int Resolution;
 int frameId;
@@ -65,6 +67,11 @@ void CSMain(uint3 id : SV_DispatchThreadID)
         Result[id.xy] = AddRandomColorOffset(stone, 0.2f, id.xy, frameId);
     }
     
+    if (spawnSandBuffer[index] == WATER)
+    {
+        Result[id.xy] = AddRandomColorOffset(water, 0.05f, id.xy, frameId);
+    }
+    
     // Calculate the top-left corner of the current 2x2 block
     int2 blockStart = int2(id.xy * 2);
     
@@ -86,23 +93,71 @@ void CSMain(uint3 id : SV_DispatchThreadID)
         return;
     }
     
+    // sand rules
     if (Result[pTopLeft].a == SAND && Result[pBottomLeft].a == EMPTY)
     {
         Swap(Result[pTopLeft], Result[pBottomLeft]);
     }
-    
     if (Result[pTopRight].a == SAND && Result[pBottomRight].a == EMPTY)
     {
         Swap(Result[pTopRight], Result[pBottomRight]);
     }
-    
     if (Result[pTopLeft].a == SAND && Result[pBottomLeft].a != EMPTY && Result[pBottomRight].r == EMPTY && pBottomRight.x < Resolution)
     {
         Swap(Result[pTopLeft], Result[pBottomRight]);
     }
-    
     if (Result[pTopRight].a == SAND && Result[pBottomRight].a != EMPTY && Result[pBottomLeft].a == EMPTY && pBottomLeft.x >= 0)
     {
         Swap(Result[pTopRight], Result[pBottomLeft]);
+    }
+    
+    // water rules
+    
+    // dropping
+    if (Result[pTopLeft].a == WATER && Result[pBottomLeft].a == EMPTY)
+    {
+        Swap(Result[pTopLeft], Result[pBottomLeft]);
+    }
+    else if (Result[pTopRight].a == WATER && Result[pBottomRight].a == EMPTY)
+    {
+        Swap(Result[pTopRight], Result[pBottomRight]);
+    }
+    else
+    {
+        // spreading
+        if (Hash(blockStart, frameId) < 0.5f) // either go left or right 
+        {
+            if (Result[pTopLeft].a == WATER && Result[pTopRight].a == EMPTY)
+            {
+                if (blockStart.x < Resolution - 1)
+                {
+                    Swap(Result[pTopLeft], Result[pTopRight]);
+                }
+            }
+            else if (Result[pBottomLeft].a == WATER && Result[pBottomRight].a == EMPTY)
+            {
+                if (blockStart.x < Resolution - 1)
+                {
+                    Swap(Result[pBottomLeft], Result[pBottomRight]);
+                }
+            }
+        }
+        else
+        {
+            if (Result[pTopRight].a == WATER && Result[pTopLeft].a == EMPTY)
+            {
+                if (blockStart.x >= 0)
+                {
+                    Swap(Result[pTopLeft], Result[pTopRight]);
+                }
+            }
+            else if (Result[pBottomRight].a == WATER && Result[pBottomLeft].a == EMPTY)
+            {
+                if (blockStart.x >= 0)
+                {
+                    Swap(Result[pBottomLeft], Result[pBottomRight]);
+                }
+            }
+        }
     }
 }
