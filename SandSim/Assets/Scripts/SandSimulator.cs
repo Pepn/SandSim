@@ -16,7 +16,6 @@ public class SandSimulator : MonoBehaviour
     ComputeBuffer spawnSandBuffer;
 
     private float timer;
-    private float inputTimer = 0.1f;
     [SerializeField] float fps = 30.0f; // Desired frame rate interval (e.g., 30 FPS)
 
     // Get the Renderer component of the child plane
@@ -158,16 +157,6 @@ public class SandSimulator : MonoBehaviour
 
     void HandleInput()
     {
-        Profiler.BeginSample("Spawn Pixle Input");
-
-        inputTimer += Time.deltaTime;
-        if(inputTimer < 0.1f)
-        {
-            return;
-        }
-
-        inputTimer = 0;
-
         // left click - sand
         if (Input.GetMouseButton(0))
         {
@@ -191,7 +180,6 @@ public class SandSimulator : MonoBehaviour
         {
             SpawnPixelType(0.8f);
         }
-        Profiler.EndSample();
     }
 
     void Update()
