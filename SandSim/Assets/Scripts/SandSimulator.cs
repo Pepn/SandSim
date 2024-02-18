@@ -145,6 +145,9 @@ public class SandSimulator : MonoBehaviour
                         }
                     }
 
+                    // TODO dont send the full lenght of array its fucking mostly empty anyway
+                    // send only the part that is interesting perhaps with an offset of where click is
+
                     spawnSandBuffer = new ComputeBuffer(spawnSandArray.Length, sizeof(float));
                     spawnSandBuffer.SetData(spawnSandArray);
 
