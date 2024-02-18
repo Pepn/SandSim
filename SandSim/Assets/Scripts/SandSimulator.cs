@@ -131,7 +131,6 @@ public class SandSimulator : MonoBehaviour
                         mappedX = (int)((-localHitPoint.x * 0.5f ) * textureSize/5);
                         mappedY = (int)((-localHitPoint.z * 0.5f) * textureSize/5);
 
-
                         // convert to fit the transposed images or smth
                         mappedX = mappedX + (int)(textureSize * 0.5f);
                         mappedY = mappedY + (int)(textureSize * 0.5f);
@@ -149,6 +148,10 @@ public class SandSimulator : MonoBehaviour
                             {
                                 int yval = textureSize * ((int)mappedY + y);
                                 int xval = (int)mappedX + x;
+                                if(yval + xval > textureSize * textureSize || yval + xval < 0)
+                                {
+                                    continue;
+                                }
                                 spawnSandArray[yval + xval] = 1;
                             }
                         }
@@ -166,7 +169,7 @@ public class SandSimulator : MonoBehaviour
         shader.Dispatch(0, numGroups, numGroups, 1);
 
         step++;
-        shader.SetInt("step", step % 3);
+        shader.SetInt("step", step % 2);
 
         if (spawnSandBuffer != null)
         {

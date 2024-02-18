@@ -18,40 +18,6 @@ bool IsSecondStep(uint step)
     return step == 1;
 }
 
-bool IsThirdStep(uint step)
-{
-    return step == 2;
-}
-
-bool IsVexelEven(uint y)
-{
-    return (y % 2) == 0;
-}
-
-bool IsVexelUneven(uint y)
-{
-    return (y % 2) != 0;
-}
-
-// Function to generate a random float between 0 and 1
-float RandomFloat(float2 seed)
-{
-    return frac(sin(dot(seed, float2(12.9898, 78.233))) * 43758.5453);
-}
-
-bool DropSandPixelLeft(int idx, int idy, int step)
-{
-    // Generate a random seed based on thread ID
-    float2 seed = float2(idx * step * step, idy * step);
-
-    // Generate a random float between 0 and 1
-    float randomValue = RandomFloat(seed);
-
-    // Use the random value to determine the outcome (50/50 chance)
-    return randomValue < 0.5f;
-}
-
-
 [numthreads(numThreads, numThreads, 1)]
 void CSMain(uint3 id : SV_DispatchThreadID)
 {    
@@ -63,63 +29,57 @@ void CSMain(uint3 id : SV_DispatchThreadID)
     int width = Resolution;
     int height = Resolution;
     
-    // Loop over the texture from bottom to top
-    int y = id.y;
+    // Calculate the top-left corner of the current 2x2 block
+    int2 blockStart = int2(id.xy * 2);
     
-    if (y >= height-1)
+    // On alternating frames offset the block 
+    //https://en.wikipedia.org/wiki/Block_cellular_automaton
+    if (IsFirstStep(step))
     {
-        return;
+        blockStart += int2(-1, -1);
     }
-    
-    int2 centerCoord = int2(id.x, y);
-    int2 belowCoord = centerCoord + int2(0, 1); // Below
-    int2 belowLeftCoord = centerCoord + int2(-1, 1); // Below
-    int2 leftCoord = centerCoord + int2(-1, 0); // Left
-    int2 rightCoord = centerCoord + int2(1, 0); // Right
-    int2 belowRightCoord = centerCoord + int2(1, 1); // Right
-    int2 upCoord = centerCoord + int2(0, -1); // Up
-    
-    // start sand rules
-    
-    // sand falling down split per alternating row so we dont overwrite
-    if (IsVexelUneven(id.y) && IsFirstStep(step))
+
+    // Iterate over each pixel within the 2x2 block
+    for (int dx = 0; dx < 2; ++dx)
     {
-        if (Result[centerCoord].r != empty.r && Result[belowCoord].r == empty.r)
+        for (int dy = 0; dy < 2; ++dy)
         {
-            Result[belowCoord] = Result[centerCoord];
-            Result[centerCoord] = empty;
-        }
-    }
-    else if(IsVexelEven(id.y) && IsSecondStep(step))
-    {
-        //float4 debug = float4(0, IsVexelUneven(id.y) & IsFrameIdEven(frameId) ? 1.0f : 0.0f, 0, 0);
-        //Result[centerCoord] = debug;
-        if (Result[centerCoord].r != empty.r && Result[belowCoord].r == empty.r)
-        {
-            Result[belowCoord] = Result[centerCoord];
-            Result[centerCoord] = empty;
-        }
-    }
-    
-    // sand falling left and right split per alternating row so we dont overwrite
-    if (IsThirdStep(step))
-    {
-        if (Result[centerCoord].r != empty.r)
-        {
-            // if below is empty put this vexel there
-            if (Result[belowCoord].r != empty.r)
+            int2 pixelCoord = blockStart + int2(dx, dy);
+            
+            // hard stop at bottom
+            if (pixelCoord.y >= height - 1)
             {
-                if (belowLeftCoord.x > 0 && Result[belowLeftCoord].r == empty.r && DropSandPixelLeft(id.x, id.y, step))
-                {
-                    Result[belowLeftCoord] = Result[centerCoord];
-                    Result[centerCoord] = empty;
-                }
-                else if (belowRightCoord.x < Resolution -1 && Result[belowRightCoord].r == empty.r)
-                {
-                    Result[belowRightCoord] = Result[centerCoord];
-                    Result[centerCoord] = empty;
-                }
+                continue;
             }
+
+            // only do falling sand in top row of the grid
+            if (dy == 1)
+            {
+                int2 belowCoord = pixelCoord + int2(0, 1);
+                int2 belowLeftCoord = pixelCoord + int2(-1, 1);
+                int2 belowRightCoord = pixelCoord + int2(1, 1);
+                
+                // if there is sand
+                if (Result[pixelCoord].r != empty.r)
+                {
+                    // and below not swap them around
+                    if (Result[belowCoord].r == empty.r)
+                    {
+                        Result[belowCoord] = Result[pixelCoord];
+                        Result[pixelCoord] = empty;
+                    }
+                    else if (belowLeftCoord.x > 0 && Result[belowLeftCoord].r == empty.r && dx == 0)
+                    {
+                        Result[belowLeftCoord] = Result[pixelCoord];
+                        Result[pixelCoord] = empty;
+                    }
+                    else if (belowRightCoord.x < Resolution - 1 && Result[belowRightCoord].r == empty.r && dx == 1)
+                    {
+                        Result[belowRightCoord] = Result[pixelCoord];
+                        Result[pixelCoord] = empty;
+                    }
+                }
+            }     
         }
     }
 }
