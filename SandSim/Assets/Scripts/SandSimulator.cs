@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEditor.ShaderKeywordFilter;
 using UnityEngine;
+using UnityEngine.Profiling;
 using UnityEngine.Rendering;
 using UnityEngine.UIElements;
 
@@ -15,6 +16,7 @@ public class SandSimulator : MonoBehaviour
     ComputeBuffer spawnSandBuffer;
 
     private float timer;
+    private float inputTimer = 0.1f;
     [SerializeField] float fps = 30.0f; // Desired frame rate interval (e.g., 30 FPS)
 
     // Get the Renderer component of the child plane
@@ -124,7 +126,7 @@ public class SandSimulator : MonoBehaviour
                     mappedY = mappedY + (int)(textureSize * 0.5f);
 
                     // Now 'mappedX' and 'mappedY' contain the position on the quad in the range [0, m_paddedImageSize]
-                    Debug.Log($" {textureSize} Clicked on quad at: (" + mappedX + ", " + mappedY + ")");
+                    //Debug.Log($" {textureSize} Clicked on quad at: (" + mappedX + ", " + mappedY + ")");
 
                     int deleteRange = 3;
 
@@ -154,14 +156,17 @@ public class SandSimulator : MonoBehaviour
 
     }
 
-    void Update()
+    void HandleInput()
     {
-        timer += Time.deltaTime;
-        if (timer <= 1.0f/fps)
+        Profiler.BeginSample("Spawn Pixle Input");
+
+        inputTimer += Time.deltaTime;
+        if(inputTimer < 0.1f)
         {
             return;
         }
-        timer = 0f;
+
+        inputTimer = 0;
 
         // left click - sand
         if (Input.GetMouseButton(0))
@@ -186,6 +191,19 @@ public class SandSimulator : MonoBehaviour
         {
             SpawnPixelType(0.8f);
         }
+        Profiler.EndSample();
+    }
+
+    void Update()
+    {
+        timer += Time.deltaTime;
+        if (timer <= 1.0f/fps)
+        {
+            return;
+        }
+        timer = 0f;
+
+        HandleInput();
 
         shader.Dispatch(0, numGroups, numGroups, 1);
 
