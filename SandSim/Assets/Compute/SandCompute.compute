@@ -39,10 +39,10 @@ float RandomFloat(float2 seed)
     return frac(sin(dot(seed, float2(12.9898, 78.233))) * 43758.5453);
 }
 
-bool DropSandPixelLeft(int idx, int idy)
+bool DropSandPixelLeft(int idx, int idy, int step)
 {
     // Generate a random seed based on thread ID
-    float2 seed = float2(idx, idy);
+    float2 seed = float2(idx * step * step, idy * step);
 
     // Generate a random float between 0 and 1
     float randomValue = RandomFloat(seed);
@@ -90,7 +90,7 @@ void CSMain(uint3 id : SV_DispatchThreadID)
             Result[centerCoord] = empty;
         }
     }
-    else if (IsVexelEven(id.y) & IsSecondStep(step))
+    else if(IsVexelEven(id.y) && IsSecondStep(step))
     {
         //float4 debug = float4(0, IsVexelUneven(id.y) & IsFrameIdEven(frameId) ? 1.0f : 0.0f, 0, 0);
         //Result[centerCoord] = debug;
@@ -109,7 +109,7 @@ void CSMain(uint3 id : SV_DispatchThreadID)
             // if below is empty put this vexel there
             if (Result[belowCoord].r != empty.r)
             {
-                if (belowLeftCoord.x > 1 && Result[belowLeftCoord].r == empty.r && DropSandPixelLeft(id.x, id.y))
+                if (belowLeftCoord.x > 0 && Result[belowLeftCoord].r == empty.r && DropSandPixelLeft(id.x, id.y, step))
                 {
                     Result[belowLeftCoord] = Result[centerCoord];
                     Result[centerCoord] = empty;

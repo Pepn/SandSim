@@ -81,9 +81,9 @@ public class SandSimulator : MonoBehaviour
         }
 
         // Fill the array with zeros
-        for (int i = 0; i < initData.Length*0.7; i++)
+        for (int i = 0; i < initData.Length*0.5; i++)
         {
-            //initData[i] = 1;
+            initData[i] = 1;
         }
 
         spawnSandBuffer.SetData(initData);
