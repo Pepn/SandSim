@@ -1,22 +1,25 @@
 #pragma kernel CSMain
 
 static const int numThreads = 4;
+
+#define EMPTY 0.0f     // Represents normal pixel
+#define DELETE -1.0f     // Represents normal pixel
+#define SAND 1.0f      // Represents sand pixel
+#define STONE 0.9f      // Represents sand pixel
+
 static const float4 empty = float4(0.0f, 0.0f, 0.0f, 0.0f);
-static const float4 sand = float4(0.880, 0.851, 0.299, 0.0f);
+static const float4 sand = float4(0.880, 0.851, 0.299, SAND);
+static const float4 stone = float4(0.880, 0.851, 0.890, STONE);
 
 int Resolution;
 int step;
 RWTexture2D<float4> Result;
-RWStructuredBuffer<int> spawnSandBuffer;
+RWStructuredBuffer<float> spawnSandBuffer;
 
+// to alternate the blocks
 bool IsFirstStep(uint step)
 {
     return step == 0;
-}
-
-bool IsSecondStep(uint step)
-{
-    return step == 1;
 }
 
 void Swap(inout float4 a, inout float4 b)
@@ -32,9 +35,20 @@ void CSMain(uint3 id : SV_DispatchThreadID)
     // Calculate the 1D index based on the 2D coordinates
     int index = id.y * Resolution + id.x;
     
-    if (spawnSandBuffer[index] == 1 && Result[id.xy].r == 0)
+    // read the input buffer and spawn pixel types
+    if (spawnSandBuffer[index] == SAND && Result[id.xy].a == EMPTY)
     {
         Result[id.xy] = Result[id.xy] + sand;
+    }
+    
+    if (spawnSandBuffer[index] == DELETE && Result[id.xy].a != EMPTY)
+    {
+        Result[id.xy] = empty;
+    }
+    
+    if (spawnSandBuffer[index] == STONE)
+    {
+        Result[id.xy] = stone;
     }
     
     // Calculate the top-left corner of the current 2x2 block
@@ -58,22 +72,22 @@ void CSMain(uint3 id : SV_DispatchThreadID)
         return;
     }
     
-    if (Result[pTopLeft].r != empty.r && Result[pBottomLeft].r == empty.r)
+    if (Result[pTopLeft].a == SAND && Result[pBottomLeft].a == EMPTY)
     {
         Swap(Result[pTopLeft], Result[pBottomLeft]);
     }
     
-    if (Result[pTopRight].r != empty.r && Result[pBottomRight].r == empty.r)
+    if (Result[pTopRight].a == SAND && Result[pBottomRight].a == EMPTY)
     {
         Swap(Result[pTopRight], Result[pBottomRight]);
     }
     
-    if (Result[pTopLeft].r != empty.r && Result[pBottomLeft].r != empty.r && Result[pBottomRight].r == empty.r && pBottomRight.x < Resolution )
+    if (Result[pTopLeft].a == SAND && Result[pBottomLeft].a != EMPTY && Result[pBottomRight].r == EMPTY && pBottomRight.x < Resolution)
     {
         Swap(Result[pTopLeft], Result[pBottomRight]);
     }
     
-    if (Result[pTopRight].r != empty.r && Result[pBottomRight].r != empty.r && Result[pBottomLeft].r == empty.r && pBottomLeft.x >= 0)
+    if (Result[pTopRight].a == SAND && Result[pBottomRight].a != EMPTY && Result[pBottomLeft].a == EMPTY && pBottomLeft.x >= 0)
     {
         Swap(Result[pTopRight], Result[pBottomLeft]);
     }
