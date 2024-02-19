@@ -9,7 +9,7 @@ static const int numThreads = 4;
 #define WATER 0.8f      // Represents sand pixel
 
 static const float4 empty = float4(0.0f, 0.0f, 0.0f, 0.0f);
-static const float4 sand = float4(0.880, 0.801, 0.299, SAND);
+static const float4 sand = float4(0.960, 0.931, 0.459, SAND);
 static const float4 stone = float4(0.880, 0.851, 0.890, STONE);
 static const float4 water = float4(0.424, 0.784, 1, WATER);
 
@@ -56,9 +56,9 @@ void CSMain(uint3 id : SV_DispatchThreadID)
     int index = id.y * Resolution + id.x;
     
     // read the input buffer and spawn pixel types
-    if (spawnSandBuffer[index] == SAND && Result[id.xy].a == EMPTY)
+    if (spawnSandBuffer[index] == SAND)
     {
-        Result[id.xy] = AddRandomColorOffset(sand, 0.1f, id.xy, frameId);
+        Result[id.xy] = AddRandomColorOffset(sand, 0.15f, id.xy, frameId);
     }
     
     if (spawnSandBuffer[index] == DELETE && Result[id.xy].a != EMPTY)
@@ -73,7 +73,7 @@ void CSMain(uint3 id : SV_DispatchThreadID)
     
     if (spawnSandBuffer[index] == WATER)
     {
-        Result[id.xy] = AddRandomColorOffset(water, 0.05f, id.xy, frameId);
+        Result[id.xy] = AddRandomColorOffset(water, 0.02f, id.xy, frameId);
     }
     
     // Calculate the top-left corner of the current 2x2 block
