@@ -2,13 +2,13 @@
 
 static const int numThreads = 4;
 
-#define EMPTY 0.0f     // Represents normal pixel
-#define DELETE -1.0f     // Represents normal pixel
-#define SAND 1.0f      // Represents sand pixel
+#define EMPTY 0.0f      // Represents normal pixel
+#define DELETE -1.0f    // Represents normal pixel
+#define SAND 1.0f       // Represents sand pixel
 #define STONE 0.9f      // Represents sand pixel
 #define WATER 0.8f      // Represents sand pixel
 
-static const float4 empty = float4(0.0f, 0.0f, 0.0f, 0.0f);
+static const float4 empty = float4(0.0f, 0.0f, 0.0f, EMPTY);
 static const float4 sand = float4(0.960, 0.931, 0.459, SAND);
 static const float4 stone = float4(0.880, 0.851, 0.890, STONE);
 static const float4 water = float4(0.424, 0.784, 1, WATER);
@@ -19,6 +19,7 @@ RWTexture2D<float4> Result;
 RWStructuredBuffer<float> spawnSandBuffer;
 
 // to alternate the blocks
+// https://en.wikipedia.org/wiki/Block_cellular_automaton
 bool IsFrameIdEven(uint frameId)
 {
     return frameId % 2;
@@ -49,9 +50,8 @@ float4 AddRandomColorOffset(float4 color, float offsetRange, float2 pixelCoord, 
 // add dynamic lightning
 // add other cellular automata (plants, fishes?) this probably needs to look outside the 2x2 cell blocks
 
-[numthreads(numThreads, numThreads, 1)]
-void CSMain(uint3 id : SV_DispatchThreadID)
-{    
+void SpawnPixel(uint3 id)
+{
     // Calculate the 1D index based on the 2D coordinates
     int index = id.y * Resolution + id.x;
     
@@ -75,12 +75,18 @@ void CSMain(uint3 id : SV_DispatchThreadID)
     {
         Result[id.xy] = AddRandomColorOffset(water, 0.02f, id.xy, frameId);
     }
+}
+
+[numthreads(numThreads, numThreads, 1)]
+void CSMain(uint3 id : SV_DispatchThreadID)
+{    
+    // check the input buffer and spawn pixels
+    SpawnPixel(id);
     
     // Calculate the top-left corner of the current 2x2 block
     int2 blockStart = int2(id.xy * 2);
     
     // On alternating frames offset the block 
-    //https://en.wikipedia.org/wiki/Block_cellular_automaton
     if (IsFrameIdEven(frameId))
     {
         blockStart += int2(-1, -1);
