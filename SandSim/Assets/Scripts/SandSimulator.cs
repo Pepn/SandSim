@@ -1,10 +1,8 @@
 using System.Collections;
 using System.Collections.Generic;
-using UnityEditor.ShaderKeywordFilter;
 using UnityEngine;
 using UnityEngine.Profiling;
 using UnityEngine.Rendering;
-using UnityEngine.UIElements;
 
 public class SandSimulator : MonoBehaviour
 {
@@ -28,6 +26,8 @@ public class SandSimulator : MonoBehaviour
 
         // Disable anti-aliasing
         renderTexture.antiAliasing = 1; // Set to 1x (no anti-aliasing)
+
+        Application.targetFrameRate = 300;
 
         // Disable mipmapping
         renderTexture.useMipMap = false;
